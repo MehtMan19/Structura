@@ -146,7 +146,7 @@ Section requirements by document type:
 Critical: clauseText must be substantive legal language (not placeholder text). Each clause should read as a real contract section.`;
 
 app.post("/api/generate-document", async (req, res) => {
-  const { deal, documentType } = req.body;
+  const { deal, documentType, precedentContext } = req.body;
   if (!deal || !documentType) {
     return res.status(400).json({ error: "deal and documentType are required" });
   }
@@ -160,6 +160,10 @@ Deal Type: ${deal.type || "M&A"}
 Deal Summary: ${deal.dealSummary || "Not provided"}
 Additional Notes: ${deal.additionalNotes || "None"}`;
 
+  const precedentNote = precedentContext
+    ? `\n\nPrecedent Library Context:\n${precedentContext}`
+    : "";
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-opus-4-6",
@@ -167,7 +171,7 @@ Additional Notes: ${deal.additionalNotes || "None"}`;
       system: GENERATE_DOCUMENT_SYSTEM_PROMPT,
       messages: [{
         role: "user",
-        content: `Please generate a complete ${documentType} for the following deal:\n\n${dealContext}`
+        content: `Please generate a complete ${documentType} for the following deal:\n\n${dealContext}${precedentNote}`
       }],
     });
     const text = response.content[0].text.trim();
